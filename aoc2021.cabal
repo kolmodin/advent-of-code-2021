@@ -16,3 +16,9 @@ executable day02
     main-is:          Day02.hs
     build-depends:    base ^>=4.15.0.0
     default-language: Haskell2010
+
+executable day03
+    main-is:          Day03.hs
+    build-depends:    base ^>=4.15.0.0
+    default-language: Haskell2010
+
