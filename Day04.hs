@@ -2,7 +2,7 @@
 
 module Main (main) where
 
-import Coord
+import Coord ( Coord(..) )
 import Data.Array (Array (), (//))
 import qualified Data.Array as Array (assocs, elems, listArray, (!))
 import Data.List (groupBy, partition)
