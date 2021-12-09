@@ -56,3 +56,9 @@ executable day08
     build-depends:    base ^>=4.15.0.0, aoclib, mtl
     default-language: Haskell2010
     ghc-options: -Wall
+
+executable day09
+    main-is:          Day09.hs
+    build-depends:    base ^>=4.15.0.0, aoclib, array
+    default-language: Haskell2010
+    ghc-options: -Wall
