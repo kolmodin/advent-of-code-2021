@@ -1,7 +1,7 @@
 module Main (main) where
 
 import qualified Data.Array as Array (listArray, (!))
-import Input (cts)
+import Input (cts, readInputDay)
 
 parse :: String -> [Int]
 parse = map read . words . cts
@@ -31,6 +31,6 @@ cost2 diff =
 
 main :: IO ()
 main = do
-  poss <- parse <$> readFile "day07.txt"
+  poss <- parse <$> readInputDay  7
   putStrLn ("Part 1: " ++ show (align cost1 poss))
   putStrLn ("Part 2: " ++ show (align cost2 poss))

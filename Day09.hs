@@ -10,6 +10,7 @@ import qualified Data.Ix as Ix
 import Data.List (sort)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Input (readInputDay)
 
 toMap :: [[a]] -> Array Coord a
 toMap lns =
@@ -54,7 +55,7 @@ basins available0
 
 main :: IO ()
 main = do
-  world <- toMap . map (map digitToInt) . lines <$> readFile "day09.txt"
+  world <- toMap . map (map digitToInt) . lines <$> readInputDay 9
   putStrLn ("Part 1: " ++ show (sum (riskPoints world)))
   let available = Set.fromList [i | (i, n) <- Array.assocs world, n /= 9]
   putStrLn ("Part 2: " ++ show (product (take 3 (reverse (sort (basins available))))))

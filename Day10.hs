@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Data.List (sort)
+import Input (readInputDay)
 
 isOpen :: Char -> Bool
 isOpen c = c `elem` "<({["
@@ -51,7 +52,7 @@ score2 = go 0
 -- Part 2: 3490802734
 main :: IO ()
 main = do
-  lns <- lines <$> readFile "day10.txt"
+  lns <- lines <$> readInputDay 10
   let result = map errorOrComplete lns
   putStrLn ("Part 1: " ++ show (sum [score c | SyntaxError c <- result]))
   let scores = sort [score2 ac | Incomplete ac <- result]

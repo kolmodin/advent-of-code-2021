@@ -3,6 +3,7 @@ module Main (main) where
 import Control.Arrow (Arrow (first), (&&&))
 import Data.List (group, sort, transpose)
 import Data.Maybe (fromMaybe)
+import Input (readInputDay)
 
 type Freq = (Int, Int)
 
@@ -46,7 +47,7 @@ co2 = run (\o z -> if o <= z then '0' else '1')
 
 main :: IO ()
 main = do
-  lns <- lines <$> readFile "day03.txt"
+  lns <- lines <$> readInputDay 3
   let fqs = freq lns
       eps = toDecimal (map gamma fqs)
       gam = toDecimal (map epsilon fqs)

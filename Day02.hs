@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Input (readInputDay)
+
 data Command = Forward Int | Depth Int
 
 parse :: [String] -> Command
@@ -21,10 +23,10 @@ sim2 (h, d, a) cmd =
 
 main :: IO ()
 main = do
-  cmds <- map (parse . words) . lines <$> readFile "day02.txt"
+  cmds <- map (parse . words) . lines <$> readInputDay 2
   do
     let (h, d) = foldl sim (0, 0) cmds
-    putStrLn ("Part 1:" ++ show (h * d))
+    putStrLn ("Part 1: " ++ show (h * d))
   do
     let (h, d, _) = foldl sim2 (0, 0, 0) cmds
-    putStrLn ("Part 2:" ++ show (h * d))
+    putStrLn ("Part 2: " ++ show (h * d))

@@ -11,10 +11,11 @@ import qualified Data.Array.MArray as MArray
 import Data.Array.ST (STUArray)
 import Data.Array.Unboxed (UArray)
 import qualified Data.Array.Unboxed as UArray
-import Data.Char (digitToInt, intToDigit)
+import Data.Char (digitToInt)
 import qualified Data.Ix as Ix
 import Data.List (findIndex)
 import Data.STRef (modifySTRef, newSTRef, readSTRef)
+import Input (readInputDay)
 
 type Cave = UArray Coord Int
 
@@ -42,20 +43,13 @@ tick arr0 = runST $ do
           when (n == 0) $ do
             writeArray hasFlashed c True
             modifySTRef flashCount (+ 1)
-            mapM_ mark (neighboursBounded  bnds c)
+            mapM_ mark (neighboursBounded bnds c)
   mapM_ mark (Ix.range bnds)
   (,) <$> readSTRef flashCount <*> freeze arr
 
-pretty :: Cave -> String
-pretty arr =
-  unlines
-    [ [intToDigit (arr UArray.! Coord row col) | col <- [0 .. 9]]
-      | row <- [0 .. 9]
-    ]
-
 main :: IO ()
 main = do
-  cave <- toCave . map (map digitToInt) . lines <$> readFile "day11.txt"
+  cave <- toCave . map (map digitToInt) . lines <$> readInputDay 11
   let allCaves = iterate (tick . snd) (0, cave)
       caves = take 100 (tail allCaves)
   putStrLn ("Part 1: " ++ show (sum (map fst caves)))

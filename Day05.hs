@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 import qualified Data.Vector as Vector
 import GHC.Arr (unsafeIndex)
-import Input (cts)
+import Input (cts, readInputDay)
 
 type Pos = (Int, Int)
 
@@ -80,6 +80,6 @@ countDangerVector mode lns =
 
 main :: IO ()
 main = do
-  lns <- map parse . lines <$> readFile "day05.txt"
+  lns <- map parse . lines <$> readInputDay 5
   putStrLn ("Part 1: " ++ show (countDangerArr NoSupportDiag lns))
   putStrLn ("Part 1: " ++ show (countDangerArr SupportDiag lns))

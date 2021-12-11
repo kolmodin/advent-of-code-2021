@@ -6,6 +6,7 @@ import qualified Control.Monad.State as State
 import Data.Char (intToDigit)
 import Data.List (partition, sort)
 import Data.Maybe (fromJust)
+import Input (readInputDay)
 
 parse :: String -> ([String], [String])
 parse ln =
@@ -61,6 +62,6 @@ decode (inp, out) = decodeOutput (decodeInput inp) out
 
 main :: IO ()
 main = do
-  input <- map parse . lines <$> readFile "day08.txt"
+  input <- map parse . lines <$> readInputDay 8
   putStrLn ("Part 1: " ++ show (sum (map count1478 input)))
   putStrLn ("Part 2: " ++ show (sum (map decode input)))

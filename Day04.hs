@@ -2,11 +2,11 @@
 
 module Main (main) where
 
-import Coord ( Coord(..) )
+import Coord (Coord (..))
 import Data.Array (Array (), (//))
 import qualified Data.Array as Array (assocs, elems, listArray, (!))
 import Data.List (groupBy, partition)
-import Input(cts)
+import Input (cts, readInputDay)
 
 split :: [String] -> [[String]]
 split = filter (not . null . head) . groupBy (\x y -> null x == null y)
@@ -66,8 +66,7 @@ run (draw : xs) bs =
 
 main :: IO ()
 main = do
-  (nums : boardNums) <- parse <$> readFile "day04.txt"
+  (nums : boardNums) <- parse <$> readInputDay 4
   let finalScores = run nums (map toBingo boardNums)
-  print finalScores
   putStrLn ("Part 1: " ++ show (head finalScores))
   putStrLn ("Part 2: " ++ show (last finalScores))
