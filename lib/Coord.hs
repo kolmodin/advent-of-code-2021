@@ -15,9 +15,9 @@ instance Ix Coord where
   inRange (Coord rowlow collow, Coord rowhi colhi) (Coord row col) =
     row >= rowlow && row <= rowhi && col >= collow && col <= colhi
 
-bounds :: [Coord] -> Maybe (Coord, Coord)
-bounds [] = Nothing
-bounds (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
+boundingBox :: [Coord] -> Maybe (Coord, Coord)
+boundingBox [] = Nothing
+boundingBox (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
   where
     go ((row1, col1), (row2, col2)) [] = (Coord row1 col1, Coord row2 col2)
     go ((row1, col1), (row2, col2)) (Coord row col : xs) =

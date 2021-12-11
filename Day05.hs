@@ -46,8 +46,8 @@ step a b = [a, a + s .. b]
       | a < b = 1
       | otherwise = -1
 
-bounds :: [Line] -> Maybe (Coord, Coord)
-bounds = Coord.bounds . map toC . concatMap (\(p1, p2) -> [p1, p2])
+boundingBox :: [Line] -> Maybe (Coord, Coord)
+boundingBox = Coord.boundingBox . map toC . concatMap (\(p1, p2) -> [p1, p2])
   where
     toC (x, y) = Coord y x
 
@@ -62,14 +62,14 @@ countDangerArr :: Mode -> [Line] -> Int
 countDangerArr mode lns =
   let clns = [Coord row col | ln <- lns, (col, row) <- draw mode ln]
       arr :: UArr.UArray Coord Int
-      arr = UArr.accumArray (+) 0 (fromJust (bounds lns)) (map (,1 :: Int) clns)
+      arr = UArr.accumArray (+) 0 (fromJust (boundingBox lns)) (map (,1 :: Int) clns)
    in length [() | i <- UArr.elems arr, i >= 2]
 
 -- 151 ms. Huh?
 countDangerVector :: Mode -> [Line] -> Int
 countDangerVector mode lns =
   let coords = [Coord row col | ln <- lns, (col, row) <- draw mode ln]
-      !bnds = fromJust (bounds lns)
+      !bnds = fromJust (boundingBox lns)
       !n = rangeSize bnds
       earr :: Vector.Vector Int
       earr = Vector.replicate n 0
