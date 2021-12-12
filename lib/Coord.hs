@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Coord where
 
 import Data.Ix (Ix (inRange, range))
@@ -25,14 +27,14 @@ boundingBox (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
 
 -- | 4 adjacent.
 adjacent :: Coord -> [Coord]
-adjacent c = [up c, right c, down c, left c]
+adjacent !c = map ($ c) [up, right, down, left]
 
 adjacentBounded :: (Coord, Coord) -> Coord -> [Coord]
 adjacentBounded bnds = filter (inRange bnds) . adjacent
 
 -- | 8 neigbours.
 neighbours :: Coord -> [Coord]
-neighbours c =
+neighbours !c =
   map
     ($ c)
     [ up,
