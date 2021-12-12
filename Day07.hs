@@ -1,10 +1,10 @@
 module Main (main) where
 
 import qualified Data.Array as Array (listArray, (!))
-import Input (cts, readInputDay)
+import Input (readInputDay, splitBy)
 
 parse :: String -> [Int]
-parse = map read . words . cts
+parse = map read . splitBy ','
 
 type Pos = Int
 

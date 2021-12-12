@@ -8,7 +8,7 @@ import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Input (readInputDay)
+import Input (readInputDay, splitBy)
 
 data Cave = Start | End | Small String | Big String deriving (Show, Ord, Eq)
 
@@ -29,10 +29,8 @@ buildGraph xs =
     return (from, [to])
 
 parse :: String -> [(Cave, Cave)]
-parse = map (extr . words . map dashToSpace) . lines
+parse = map (extr . splitBy '-') . lines
   where
-    dashToSpace '-' = ' '
-    dashToSpace c = c
     extr [from, to] = (toCave from, toCave to)
     extr e = error ("parse: unknown parts: " ++ show e)
 

@@ -4,10 +4,10 @@ module Main (main) where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Input (cts, readInputDay)
+import Input (readInputDay, splitBy)
 
 parse :: String -> [Int]
-parse = map read . words . cts
+parse = map read . splitBy ','
 
 type Count = Int
 
