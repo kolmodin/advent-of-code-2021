@@ -17,6 +17,12 @@ instance Ix Coord where
   inRange (Coord rowlow collow, Coord rowhi colhi) (Coord row col) =
     row >= rowlow && row <= rowhi && col >= collow && col <= colhi
 
+coordFromXY :: (Int, Int) -> Coord
+coordFromXY (x, y) = Coord y x
+
+transposeCoord :: Coord -> Coord
+transposeCoord (Coord y x) = Coord x y
+
 boundingBox :: [Coord] -> Maybe (Coord, Coord)
 boundingBox [] = Nothing
 boundingBox (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
