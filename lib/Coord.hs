@@ -56,6 +56,9 @@ neighbours !c =
 neighboursBounded :: (Coord, Coord) -> Coord -> [Coord]
 neighboursBounded bnds = filter (inRange bnds) . neighbours
 
+manhattan :: Coord -> Coord -> Int
+manhattan (Coord y0 x0) (Coord y1 x1) = abs (y0 - y1) + abs (x0 - x1)
+
 up :: Coord -> Coord
 up (Coord row col) = Coord (row - 1) col
 
