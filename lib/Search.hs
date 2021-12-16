@@ -6,18 +6,18 @@ import Data.Foldable (foldl')
 import qualified Data.PQueue.Prio.Min as PQ
 import qualified Data.Set as Set
 
-bfs :: Ord s => s -> (s -> [s]) -> [s]
-bfs initS = bfsWith initS id
+dfs :: Ord s => s -> (s -> [s]) -> [s]
+dfs initS = dfsWith initS id
 
-bfsWith :: Ord r => s -> (s -> r) -> (s -> [s]) -> [s]
-bfsWith initS rep next = go mempty [initS]
+dfsWith :: Ord r => s -> (s -> r) -> (s -> [s]) -> [s]
+dfsWith initS rep next = go mempty [initS]
   where
     go _ [] = []
     go seen (x : xs)
       | Set.member (rep x) seen = go seen xs
       | otherwise =
         let next' = filter ((`Set.notMember` seen) . rep) (next x)
-         in x : go (Set.insert (rep x) seen) (xs ++ next')
+         in x : go (Set.insert (rep x) seen) (next' ++ xs)
 
 {-# INLINE dijkstraWith #-}
 dijkstraWith :: Ord r => s -> (s -> r) -> (s -> [(Int, s)]) -> [(s, Int)]
