@@ -1,15 +1,19 @@
 module Input where
 
+import qualified Data.ByteString.Char8 as C8
 import System.Environment (getArgs)
 import Text.Printf (printf)
 
 readInputDay :: Int -> IO String
-readInputDay day = do
+readInputDay day = C8.unpack <$> readInputDayC8 day
+
+readInputDayC8 :: Int -> IO C8.ByteString
+readInputDayC8 day = do
   args <- getArgs
   case args of
-    [] -> readFile (printf "inputs/day%02d.txt" day)
-    ("-" : _) -> getContents
-    [file] -> readFile file
+    [] -> C8.readFile (printf "inputs/day%02d.txt" day)
+    ("-" : _) -> C8.getContents
+    [file] -> C8.readFile file
     _ -> error ("readInputDay: unknown args: " ++ show args)
 
 cts :: String -> String

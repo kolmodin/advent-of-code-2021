@@ -1,19 +1,28 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 
 module Main (main) where
 
+import Control.Monad (replicateM)
 import Coord (Coord (..))
 import Data.Array (Array (), (//))
 import qualified Data.Array as Array (assocs, elems, listArray, (!))
-import Data.List (groupBy, partition)
-import Input (cts, readInputDay)
+import qualified Data.ByteString.Char8 as C8
+import Data.Char (isSpace)
+import Data.List (partition)
+import qualified FlatParse.Basic as P
+import Input (cts, readInputDayC8)
 
-split :: [String] -> [[String]]
-split = filter (not . null . head) . groupBy (\x y -> null x == null y)
-
-parse :: String -> [[Int]]
-parse =
-  map (map (read :: String -> Int) . words . unlines) . split . lines . cts
+fpParse :: C8.ByteString -> ([Int], [[Int]])
+fpParse str = case P.runParser p str of
+  P.OK x _ -> x
+  where
+    p = do
+      num <- P.readInt
+      nums <- P.many ($(P.char ',') *> P.readInt)
+      let board = replicateM 25 (P.some_ (P.satisfy isSpace) *> P.readInt)
+      boards <- P.many board
+      return (num : nums, boards)
 
 newtype Bingo = Bingo (Array Coord (Int, Bool))
 
@@ -66,7 +75,7 @@ run (draw : xs) bs =
 
 main :: IO ()
 main = do
-  (nums : boardNums) <- parse <$> readInputDay 4
+  (nums, boardNums) <- fpParse <$> readInputDayC8 4
   let finalScores = run nums (map toBingo boardNums)
   putStrLn ("Part 1: " ++ show (head finalScores))
   putStrLn ("Part 2: " ++ show (last finalScores))
