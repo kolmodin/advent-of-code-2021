@@ -2,7 +2,6 @@
 
 module Main (main) where
 
-import Control.Exception (assert)
 import Control.Monad (unless, when)
 import Control.Monad.ST (ST, runST)
 import Coord (Coord (..), neighboursBounded)
@@ -15,19 +14,9 @@ import Data.Char (digitToInt)
 import qualified Data.Ix as Ix
 import Data.List (findIndex)
 import Data.STRef (modifySTRef, newSTRef, readSTRef)
-import Input (readInputDay)
+import Input (readInputDay, toArray)
 
 type Cave = UArray Coord Int
-
-toCave :: [[Int]] -> Cave
-toCave lns =
-  let lo = Coord 0 0
-      hi = Coord (length lns - 1) (length (head lns) - 1)
-   in assert
-        ( let len = length (head lns)
-           in all ((len ==) . length) lns
-        )
-        (UArray.listArray (lo, hi) (concat lns))
 
 tick :: Cave -> (Int, Cave)
 tick arr0 = runST $ do
@@ -49,7 +38,7 @@ tick arr0 = runST $ do
 
 main :: IO ()
 main = do
-  cave <- toCave . map (map digitToInt) . lines <$> readInputDay 11
+  cave <- toArray . map (map digitToInt) . lines <$> readInputDay 11
   let allCaves = iterate (tick . snd) (0, cave)
       caves = take 100 (tail allCaves)
   putStrLn ("Part 1: " ++ show (sum (map fst caves)))

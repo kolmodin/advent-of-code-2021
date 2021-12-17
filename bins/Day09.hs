@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Main (main) where
 
-import Control.Exception (assert)
 import Coord (Coord (..), adjacent)
 import Data.Array (Array)
 import qualified Data.Array as Array
@@ -10,17 +9,7 @@ import qualified Data.Ix as Ix
 import Data.List (sort)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Input (readInputDay)
-
-toMap :: [[a]] -> Array Coord a
-toMap lns =
-  let lo = Coord 0 0
-      hi = Coord (length lns - 1) (length (head lns) - 1)
-   in assert
-        ( let len = length (head lns)
-           in all ((len==) . length) lns
-        )
-        $ Array.listArray (lo, hi) (concat lns)
+import Input (readInputDayArray)
 
 lowPoints :: Array Coord Int -> [Int]
 lowPoints arr =
@@ -55,7 +44,7 @@ basins available0
 
 main :: IO ()
 main = do
-  world <- toMap . map (map digitToInt) . lines <$> readInputDay 9
+  world <- fmap digitToInt <$> readInputDayArray 9
   putStrLn ("Part 1: " ++ show (sum (riskPoints world)))
   let available = Set.fromList [i | (i, n) <- Array.assocs world, n /= 9]
   putStrLn ("Part 2: " ++ show (product (take 3 (reverse (sort (basins available))))))

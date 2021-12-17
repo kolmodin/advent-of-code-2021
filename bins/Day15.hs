@@ -3,26 +3,14 @@
 
 module Main (main) where
 
-import Control.Exception (assert)
 import Coord (Coord (Coord), adjacentBounded, manhattan)
-import Data.Array.IArray (IArray)
 import Data.Array.Unboxed (UArray)
 import qualified Data.Array.Unboxed as UArray
 import Data.Char (digitToInt)
 import qualified Data.Ix as Ix
 import Data.Maybe (fromMaybe)
-import Input (readInputDay)
+import Input (readInputDay, toArray)
 import Search (astarWith)
-
-toMap :: IArray UArray a => [[a]] -> UArray Coord a
-toMap lns =
-  let lo = Coord 0 0
-      hi = Coord (length lns - 1) (length (head lns) - 1)
-   in assert
-        ( let len = length (head lns)
-           in all ((len ==) . length) lns
-        )
-        $ UArray.listArray (lo, hi) (concat lns)
 
 findLowestRisk :: UArray Coord Int -> Coord -> Coord -> Int
 findLowestRisk cave from target =
@@ -54,7 +42,7 @@ makeLargeCave cave = UArray.listArray largeBnds [look c | c <- Ix.range largeBnd
 
 main :: IO ()
 main = do
-  cave <- toMap . map (map digitToInt) . lines <$> readInputDay 15
+  cave <- toArray . map (map digitToInt) . lines <$> readInputDay 15
   putStrLn ("Part 1: " ++ show (uncurry (findLowestRisk cave) (UArray.bounds cave)))
   let cave' = makeLargeCave cave
   putStrLn ("Part 2: " ++ show (uncurry (findLowestRisk cave') (UArray.bounds cave')))
