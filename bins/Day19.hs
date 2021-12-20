@@ -3,15 +3,14 @@
 module Main (main) where
 
 import Control.Monad (forM_, guard)
-import Data.List (transpose)
+import Data.List (sort, transpose)
 import Data.Maybe (listToMaybe)
-import Data.Set (Set)
 import qualified Data.Set as Set
 import Input (cts, readInputDay, splitBy)
 
 data Scanner = Scanner Int [XYZ] [[XYZ]] deriving (Show)
 
-data Resolved = Resolved Int XYZ [XYZ] (Set XYZ) deriving (Show)
+data Resolved = Resolved Int XYZ [XYZ] deriving (Show)
 
 type XYZ = (Int, Int, Int)
 
@@ -21,8 +20,8 @@ parse = map pScanner . splitBy "" . lines
 pScanner :: [String] -> Scanner
 pScanner inp =
   let ["---", "scanner", n, "---"] = words (head inp)
-      bs = map pXYZ (tail inp)
-      rot3ds = transpose $ map trans bs
+      bs = sort $ map pXYZ (tail inp)
+      rot3ds = map sort $ transpose $ map trans bs
    in Scanner (read n) bs rot3ds
 
 pXYZ :: String -> XYZ
@@ -61,10 +60,10 @@ trans (x, y, z) =
    in concat $ ups : downs : around
 
 resolveNow :: Scanner -> Resolved
-resolveNow (Scanner n bs _) = Resolved n (0, 0, 0) bs (Set.fromList bs)
+resolveNow (Scanner n bs _) = Resolved n (0, 0, 0) bs
 
 matchingPair :: Resolved -> Scanner -> Maybe Resolved
-matchingPair (Resolved _ _ sc1 sc1set) (Scanner b _ sc2s) = listToMaybe $ do
+matchingPair (Resolved _ _ sc1) (Scanner b _ sc2s) = listToMaybe $ do
   -- For each pair in sc1 and sc2, see if assuming that they're on
   -- the same coordinate means that 12 of all the beacons
   -- overlap.
@@ -75,16 +74,29 @@ matchingPair (Resolved _ _ sc1 sc1set) (Scanner b _ sc2s) = listToMaybe $ do
   b2 <- sc2
   let pos2abs = b1 `sub` b2
       sc2' = map (add pos2abs) sc2
-      found12 = findAtLeast 12 (length sc2) (`Set.member` sc1set) sc2'
+      found12 = findMatches 12 (length sc2) sc1 sc2'
   guard found12
-  return (Resolved b pos2abs sc2' (Set.fromList sc2'))
+  return (Resolved b pos2abs sc2')
 
-findAtLeast :: Int -> Int -> (a -> Bool) -> [a] -> Bool
-findAtLeast matchesLeft n f xxs
-  | matchesLeft == 0 = True
-  | n < matchesLeft = False
-  | (x : xs) <- xxs, f x = findAtLeast (matchesLeft - 1) (n - 1) f xs
-  | otherwise = findAtLeast matchesLeft (n - 1) f (drop 1 xxs)
+findMatches ::
+  Ord a =>
+  -- | Number of matches we search.
+  Int ->
+  -- | Number of elements in second list.
+  Int ->
+  -- | First list.
+  [a] ->
+  -- | Second list.
+  [a] ->
+  Bool
+findMatches 0 _ _ _ = True
+findMatches _ _ [] _ = False
+findMatches _ _ _ [] = False
+findMatches matchesLeft n (x : xs) (y : ys)
+  | matchesLeft > n = False
+  | x == y = findMatches (matchesLeft - 1) (n - 1) xs ys
+  | x < y = findMatches matchesLeft n xs (y : ys)
+  | otherwise = findMatches matchesLeft (n - 1) (x : xs) ys
 
 partitionMatch :: Resolved -> [Scanner] -> ([Resolved], [Scanner])
 partitionMatch _ [] = ([], [])
@@ -105,14 +117,14 @@ main :: IO ()
 main = do
   (sc0 : scanners) <- parse <$> readInputDay 19
   let allResolved = resolve [resolveNow sc0] scanners
-      xyzs = Set.fromList $ concat [xyzs0 | Resolved _ _ xyzs0 _ <- allResolved]
-  forM_ allResolved $ \(Resolved n pos _ _) ->
+      xyzs = Set.fromList $ concat [xyzs0 | Resolved _ _ xyzs0 <- allResolved]
+  forM_ allResolved $ \(Resolved n pos _) ->
     putStrLn ("Resolved " ++ show n ++ " at " ++ show pos)
   putStrLn ("Part 1: " ++ show (Set.size xyzs))
   let maxManhattan =
         maximum
           [ manhattanXYZ pos1 pos2
-            | Resolved _ pos1 _ _ <- allResolved,
-              Resolved _ pos2 _ _ <- allResolved
+            | Resolved _ pos1 _ <- allResolved,
+              Resolved _ pos2 _ <- allResolved
           ]
   putStrLn ("Part 2: " ++ show maxManhattan)
