@@ -53,6 +53,13 @@ neighbours !c =
       up . left
     ]
 
+threeByThree :: Coord -> [Coord]
+threeByThree (Coord row col) =
+  [ Coord (row + rd) (col + cd)
+    | rd <- [-1, 0, 1],
+      cd <- [-1, 0, 1]
+  ]
+
 neighboursBounded :: (Coord, Coord) -> Coord -> [Coord]
 neighboursBounded bnds = filter (inRange bnds) . neighbours
 
