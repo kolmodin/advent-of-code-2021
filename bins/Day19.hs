@@ -8,9 +8,11 @@ import Data.Maybe (listToMaybe)
 import qualified Data.Set as Set
 import Input (cts, readInputDay, splitBy)
 
-data Scanner = Scanner Int [XYZ] [[XYZ]] deriving (Show)
+data Scanner = Scanner Int Fingerprint [XYZ] [[XYZ]] deriving (Show)
 
-data Resolved = Resolved Int XYZ [XYZ] deriving (Show)
+data Resolved = Resolved Int Fingerprint XYZ [XYZ] deriving (Show)
+
+data Fingerprint = Fingerprint !Int [Int] deriving (Show)
 
 type XYZ = (Int, Int, Int)
 
@@ -22,12 +24,22 @@ pScanner inp =
   let ["---", "scanner", n, "---"] = words (head inp)
       bs = sort $ map pXYZ (tail inp)
       rot3ds = map sort $ transpose $ map trans bs
-   in Scanner (read n) bs rot3ds
+      fp = mkFingerprint bs
+   in Scanner (read n) fp bs rot3ds
 
 pXYZ :: String -> XYZ
 pXYZ ln =
   let [x, y, z] = words (cts ln)
    in (read x, read y, read z)
+
+mkFingerprint :: [XYZ] -> Fingerprint
+mkFingerprint xyzs =
+  let fp = sort [manhattanXYZ a b | a <- xyzs, b <- xyzs]
+   in Fingerprint (length fp) fp
+
+matchesFingerprint :: Fingerprint -> Fingerprint -> Bool
+matchesFingerprint (Fingerprint _ a) (Fingerprint lenB b) =
+  findMatches (12 * 12) lenB a b
 
 add :: XYZ -> XYZ -> XYZ
 add (x1, y1, z1) (x2, y2, z2) = (x1 + x2, y1 + y2, z1 + z2)
@@ -60,10 +72,15 @@ trans (x, y, z) =
    in concat $ ups : downs : around
 
 resolveNow :: Scanner -> Resolved
-resolveNow (Scanner n bs _) = Resolved n (0, 0, 0) bs
+resolveNow (Scanner n fp bs _) = Resolved n fp (0, 0, 0) bs
 
 matchingPair :: Resolved -> Scanner -> Maybe Resolved
-matchingPair (Resolved _ _ sc1) (Scanner b _ sc2s) = listToMaybe $ do
+matchingPair (Resolved _ fp1 _ sc1) (Scanner b fp2 sc20 sc2s) = listToMaybe $ do
+  -- Proceed only if fingerprint matches.
+  -- A fingerprint is the distances between each beacon to every other beacon.
+  -- There should be an intersection of distances in fp1 and fp2,
+  -- at least 12*12=144 for a potential match.
+  guard (matchesFingerprint fp1 fp2)
   -- For each pair in sc1 and sc2, see if assuming that they're on
   -- the same coordinate means that 12 of all the beacons
   -- overlap.
@@ -74,9 +91,9 @@ matchingPair (Resolved _ _ sc1) (Scanner b _ sc2s) = listToMaybe $ do
   b2 <- sc2
   let pos2abs = b1 `sub` b2
       sc2' = map (add pos2abs) sc2
-      found12 = findMatches 12 (length sc2) sc1 sc2'
+      found12 = findMatches 12 (length sc20) sc1 sc2'
   guard found12
-  return (Resolved b pos2abs sc2')
+  return (Resolved b fp2 pos2abs sc2')
 
 findMatches ::
   Ord a =>
@@ -117,14 +134,14 @@ main :: IO ()
 main = do
   (sc0 : scanners) <- parse <$> readInputDay 19
   let allResolved = resolve [resolveNow sc0] scanners
-      xyzs = Set.fromList $ concat [xyzs0 | Resolved _ _ xyzs0 <- allResolved]
-  forM_ allResolved $ \(Resolved n pos _) ->
+      xyzs = Set.fromList $ concat [xyzs0 | Resolved _ _ _ xyzs0 <- allResolved]
+  forM_ allResolved $ \(Resolved n _ pos _) ->
     putStrLn ("Resolved " ++ show n ++ " at " ++ show pos)
   putStrLn ("Part 1: " ++ show (Set.size xyzs))
   let maxManhattan =
         maximum
           [ manhattanXYZ pos1 pos2
-            | Resolved _ pos1 _ <- allResolved,
-              Resolved _ pos2 _ <- allResolved
+            | Resolved _ _ pos1 _ <- allResolved,
+              Resolved _ _ pos2 _ <- allResolved
           ]
   putStrLn ("Part 2: " ++ show maxManhattan)
