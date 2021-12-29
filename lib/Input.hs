@@ -2,7 +2,6 @@
 
 module Input where
 
-import Control.Exception (assert)
 import Coord (Coord (Coord))
 import Data.Array.IArray (IArray)
 import qualified Data.Array.IArray as IArray
@@ -41,6 +40,12 @@ toArray lns =
   let rowlen = length (head lns)
       lo = Coord 0 0
       hi = Coord (length lns - 1) (rowlen - 1)
-   in assert
-        (all ((rowlen ==) . length) lns)
-        (IArray.listArray (lo, hi) (concat lns))
+   in IArray.array (lo, hi) (linesWithCoords lns)
+
+linesWithCoords :: [[e]] -> [(Coord, e)]
+linesWithCoords lns =
+  [
+    (Coord rowIx colIx, el)
+    | (rowIx, rowEls) <- zip [0..] lns
+    , (colIx, el) <- zip [0..] rowEls
+  ]

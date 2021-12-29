@@ -4,6 +4,7 @@ module Coord where
 
 import Data.Ix (Ix (inRange, range))
 import GHC.Ix (unsafeIndex)
+import Data.Foldable (toList)
 
 data Coord = Coord {-# UNPACK #-} !Int {-# UNPACK #-} !Int deriving (Ord, Eq, Show)
 
@@ -23,10 +24,11 @@ coordFromXY (x, y) = Coord y x
 transposeCoord :: Coord -> Coord
 transposeCoord (Coord y x) = Coord x y
 
-boundingBox :: [Coord] -> Maybe (Coord, Coord)
-boundingBox [] = Nothing
-boundingBox (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
+boundingBox :: Foldable t => t Coord -> Maybe (Coord, Coord)
+boundingBox x = boundingBox' (toList x)
   where
+    boundingBox' [] = Nothing
+    boundingBox' (Coord row0 col0 : xs0) = Just (go ((row0, col0), (row0, col0)) xs0)
     go ((row1, col1), (row2, col2)) [] = (Coord row1 col1, Coord row2 col2)
     go ((row1, col1), (row2, col2)) (Coord row col : xs) =
       go ((min row1 row, min col1 col), (max row2 row, max col2 col)) xs
@@ -77,3 +79,6 @@ down (Coord row col) = Coord (row + 1) col
 
 left :: Coord -> Coord
 left (Coord row col) = Coord row (col - 1)
+
+add :: Coord -> Coord -> Coord
+add (Coord y1 x1) (Coord y2 x2) = Coord (y1 + y2) (x1 + x2)
