@@ -3,15 +3,18 @@
 module Main (main) where
 
 import Coord (Coord (Coord), add, boundingBox)
+import Data.Array.Unboxed (UArray)
+import qualified Data.Array.Unboxed as UArray
 import Data.List (findIndex)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
+import Debug.Trace (trace)
 import Input (linesWithCoords, readInputDay)
 
-data Cucumber = East | South deriving (Eq, Show)
+type Cucumber = Char
 
-type Sea = Map Coord Cucumber
+type Sea = UArray Coord Char
 
 east :: Coord
 east = Coord 0 1
@@ -21,31 +24,37 @@ south = Coord 1 0
 
 dir :: Cucumber -> Coord
 dir c = case c of
-  East -> east
-  South -> south
+  '>' -> east
+  'v' -> south
+  _ -> error ("dir: " ++ show c)
 
 parse :: String -> Sea
-parse = Map.fromList . mapMaybe cucumber . linesWithCoords . lines
+parse str = UArray.array bnds coordCucumber
   where
-    cucumber (c, '>') = Just (c, East)
-    cucumber (c, 'v') = Just (c, South)
-    cucumber _ = Nothing
+    Just bnds = boundingBox (map fst coordCucumber)
+    coordCucumber = linesWithCoords (lines str)
 
 step :: Coord -> Sea -> Sea
-step bnds = step1 bnds South . step1 bnds East
+step bnds = step1 bnds 'v' . step1 bnds '>'
 
 step1 :: Coord -> Cucumber -> Sea -> Sea
 step1 bnds cucumber sea =
-  Map.fromList
-    [ (newCoord c cc, cc)
-      | (c, cc) <- Map.toList sea
+  UArray.accumArray
+    (\ _ x -> x)
+    '.'
+    (UArray.bounds sea)
+    [ new c cc
+      | (c, cc) <- UArray.assocs sea,
+        cc /= '.'
     ]
   where
-    newCoord c cc =
-      let c' = wrapAround bnds (c `add` dir cc)
-       in if Map.notMember c' sea && cc == cucumber
-            then c'
-            else c
+    new c cc
+      | cc /= cucumber = (c, cc)
+      | otherwise =
+        let c' = wrapAround bnds (c `add` dir cc)
+         in if sea UArray.! c' == '.'
+              then (c', cc)
+              else (c, cc)
 
 wrapAround :: Coord -> Coord -> Coord
 wrapAround (Coord edgeY edgeX) (Coord y x) =
@@ -56,7 +65,7 @@ wrapAround (Coord edgeY edgeX) (Coord y x) =
 main :: IO ()
 main = do
   sea0 <- parse <$> readInputDay 25
-  let Just (_, edge) = boundingBox (Map.keys sea0)
+  let (_, edge) = UArray.bounds sea0
   let seas = iterate (step edge) sea0
       space = zipWith (==) seas (tail seas)
   putStrLn ("Part 1: " ++ show (fmap (+ 1) (findIndex id space)))
