@@ -77,7 +77,7 @@ set (Reg x y z w) v i =
     'w' -> Reg x y z i
     _ -> error "set"
 
-data Run = NeedInp Reg (Int -> Run) | Done Reg [Int]
+data Run = NeedInp !Reg !(Int -> Run) | Done !Reg [Int]
 
 instance Show Run where
   show (NeedInp reg _) = "NeedInp " ++ show reg
@@ -161,6 +161,11 @@ Arrange so that x y w are set to 0, reducing the number of states.
 real	1m20,473s
 user	1m20,135s
 sys	0m0,314s
+
+Add bang on Reg in Run.
+real	0m50,633s
+user	0m50,466s
+sys	0m0,097s
 -}
 
 main :: IO ()
