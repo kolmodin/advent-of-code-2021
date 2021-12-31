@@ -11,17 +11,15 @@ import Input (readInputDay)
 
 data Instr
   = Inp {-# UNPACK #-} !Var
-  | Op !Op {-# UNPACK #-} !Var !VarLit
+  | OpLit !Op {-# UNPACK #-} !Var {-# UNPACK #-} !Lit
+  | OpVar !Op {-# UNPACK #-} !Var {-# UNPACK #-} !Var
   deriving (Eq, Ord, Show)
 
 data Op = Add | Mul | Div | Mod | Eql deriving (Eq, Ord, Show)
 
 type Var = Char
 
-data VarLit
-  = Var {-# UNPACK #-} !Var
-  | Lit {-# UNPACK #-} !Int
-  deriving (Eq, Ord, Show)
+type Lit = Int
 
 data Reg
   = Reg
@@ -40,17 +38,17 @@ hash len reg = error (show (len, reg))
 parse :: String -> [Instr]
 parse = map (go . words) . lines
   where
-    varorlit [var]
-      | isAlpha var = Var var
-    varorlit xs = Lit (read xs)
+    varorlit op v [var]
+      | isAlpha var = OpVar op v var
+    varorlit op v lit = OpLit op v (read lit)
     go xs =
       case xs of
         ["inp", [var]] -> Inp var
-        ["add", [var], vol] -> Op Add var (varorlit vol)
-        ["mul", [var], vol] -> Op Mul var (varorlit vol)
-        ["div", [var], vol] -> Op Div var (varorlit vol)
-        ["mod", [var], vol] -> Op Mod var (varorlit vol)
-        ["eql", [var], vol] -> Op Eql var (varorlit vol)
+        ["add", [var], vol] -> varorlit Add var vol
+        ["mul", [var], vol] -> varorlit Mul var vol
+        ["div", [var], vol] -> varorlit Div var vol
+        ["mod", [var], vol] -> varorlit Mod var vol
+        ["eql", [var], vol] -> varorlit Eql var vol
         _ -> error "parse"
 
 get :: Reg -> Var -> Int
@@ -61,12 +59,6 @@ get (Reg x y z w) v =
     'z' -> z
     'w' -> w
     _ -> error "get"
-
-getVol :: Reg -> VarLit -> Int
-getVol reg vol =
-  case vol of
-    Var v -> get reg v
-    Lit v -> v
 
 set :: Reg -> Var -> Int -> Reg
 set (Reg x y z w) v i =
@@ -92,15 +84,19 @@ eval = go []
         Inp v -> NeedInp (set reg v 0) $ \i ->
           let reg' = set reg v i
            in go (i : inps) reg' instrs
-        Op Add v vol -> go1 v (+) vol
-        Op Mul v vol -> go1 v (*) vol
-        Op Div v vol -> go1 v div vol
-        Op Mod v vol -> go1 v mod vol
-        Op Eql v vol -> go1 v (\x y -> if x == y then 1 else 0) vol
+        OpLit Add v lit -> golit v (+) lit
+        OpLit Mul v lit -> golit v (*) lit
+        OpLit Div v lit -> golit v div lit
+        OpLit Mod v lit -> golit v mod lit
+        OpLit Eql v lit -> golit v (\x y -> if x == y then 1 else 0) lit
+        OpVar Add v var -> govar v (+) var
+        OpVar Mul v var -> govar v (*) var
+        OpVar Div v var -> govar v div var
+        OpVar Mod v var -> govar v mod var
+        OpVar Eql v var -> govar v (\x y -> if x == y then 1 else 0) var
       where
-        go1 v f vol =
-          let reg' = set reg v (get reg v `f` getVol reg vol)
-           in go inps reg' instrs
+        golit v f lit = go inps (set reg v (get reg v `f` lit)) instrs
+        govar v f var = go inps (set reg v (get reg v `f` get reg var)) instrs
 
 isOk :: Reg -> Bool
 isOk reg = get reg 'z' == 0
@@ -112,12 +108,12 @@ optimize = go []
     go prev (x : xs) = go (pushUp x prev) xs
 
 pushUp :: Instr -> [Instr] -> [Instr]
-pushUp y@(Op Mul _ (Lit 0)) (x : xs)
+pushUp y@(OpLit Mul _ 0) (x : xs)
   | all (`notElem` refs x) (refs y) = x : pushUp y xs
   where
     refs (Inp v) = [v]
-    refs (Op _ v (Lit _)) = [v]
-    refs (Op _ v (Var w)) = [v, w]
+    refs (OpLit _ v _) = [v]
+    refs (OpVar _ v w) = [v, w]
 pushUp y xxs = y : xxs
 
 type Seen = IntSet
@@ -166,6 +162,11 @@ Add bang on Reg in Run.
 real	0m50,633s
 user	0m50,466s
 sys	0m0,097s
+
+Specialize lit vs var.
+real	0m44,374s
+user	0m44,167s
+sys	0m0,132s
 -}
 
 main :: IO ()
