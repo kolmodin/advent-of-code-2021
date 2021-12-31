@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Main (main) where
@@ -17,7 +18,10 @@ data Op = Add | Mul | Div | Mod | Eql deriving (Eq, Ord, Show)
 
 type Var = Char
 
-data VarLit = Var {-# UNPACK #-} !Var | Lit {-# UNPACK #-} !Int deriving (Eq, Ord, Show)
+data VarLit
+  = Var {-# UNPACK #-} !Var
+  | Lit {-# UNPACK #-} !Int
+  deriving (Eq, Ord, Show)
 
 data Reg
   = Reg
@@ -28,12 +32,10 @@ data Reg
   deriving (Eq, Ord, Show)
 
 hash :: Int -> Reg -> Int
-hash len (Reg a b c d) =
+hash len (Reg 0 0 z 0) =
   unsafeShiftL len 60
-    .|. unsafeShiftL a 45
-    .|. unsafeShiftL b 30
-    .|. unsafeShiftL c 15
-    .|. d
+    .|. z
+hash len reg = error (show (len, reg))
 
 parse :: String -> [Instr]
 parse = map (go . words) . lines
@@ -75,10 +77,10 @@ set (Reg x y z w) v i =
     'w' -> Reg x y z i
     _ -> error "set"
 
-data Run = NeedInp Reg [Int] (Int -> Run) | Done Reg [Int]
+data Run = NeedInp Reg (Int -> Run) | Done Reg [Int]
 
 instance Show Run where
-  show (NeedInp reg inps _) = "NeedInp " ++ show (reg, inps)
+  show (NeedInp reg _) = "NeedInp " ++ show reg
   show (Done reg inps) = "Done " ++ show (reg, inps)
 
 eval :: Reg -> [Instr] -> Run
@@ -87,7 +89,7 @@ eval = go []
     go inps reg [] = Done reg inps
     go inps reg (instr : instrs) =
       case instr of
-        Inp v -> NeedInp reg inps $ \i ->
+        Inp v -> NeedInp (set reg v 0) $ \i ->
           let reg' = set reg v i
            in go (i : inps) reg' instrs
         Op Add v vol -> go1 v (+) vol
@@ -103,39 +105,38 @@ eval = go []
 isOk :: Reg -> Bool
 isOk reg = get reg 'z' == 0
 
+optimize :: [Instr] -> [Instr]
+optimize = go []
+  where
+    go prev [] = reverse prev
+    go prev (x : xs) = go (pushUp x prev) xs
+
+pushUp :: Instr -> [Instr] -> [Instr]
+pushUp y@(Op Mul _ (Lit 0)) (x : xs)
+  | all (`notElem` refs x) (refs y) = x : pushUp y xs
+  where
+    refs (Inp v) = [v]
+    refs (Op _ v (Lit _)) = [v]
+    refs (Op _ v (Var w)) = [v, w]
+pushUp y xxs = y : xxs
+
 type Seen = IntSet
 
--- optimize :: [Instr] -> [Instr]
--- optimize = go []
---   where
---     go prev [] = reverse prev
---     go prev (x : xs) = go (pushUp x prev) xs
-
--- pushUp :: Instr -> [Instr] -> [Instr]
--- pushUp y [] = [y]
--- pushUp (Inp v) xs = Inp v : xs
--- pushUp y (x : xs)
---   | any (`elem` refs x) (refs y) = y : x : xs
---   | otherwise = x : pushUp y xs
---   where
---     refs (Inp v) = [v]
---     refs (Op _ v (Lit _)) = [v]
---     refs (Op _ v (Var w)) = [v, w]
-
 run :: [Int] -> Run -> Either Seen (Int, Reg, String)
-run try = go mempty
+run try = go 0 mempty
   where
-    go seen0 = \case
+    go !len !seen0 = \case
       Done reg inp
         | isOk reg -> Right (IntSet.size seen0, reg, map intToDigit (reverse inp))
         | otherwise -> Left seen0
-      NeedInp reg inp f
-        | IntSet.member (hash (length inp) reg) seen0 -> Left seen0
+      NeedInp reg f
+        | IntSet.member (hash len reg) seen0 -> Left seen0
         | otherwise ->
-          let seen1 = IntSet.insert (hash (length inp) reg) seen0
+          let seen1 = IntSet.insert (hash len reg) seen0
+              len' = len + 1
               tryEach seen [] = Left seen
               tryEach seen (n : ns) =
-                case go seen (f n) of
+                case go len' seen (f n) of
                   Left seen' -> tryEach seen' ns
                   Right res -> Right res
            in tryEach seen1 try
@@ -155,11 +156,16 @@ IntSet with hash on Reg.
 real	2m8,147s
 user	2m6,976s
 sys	0m1,112s
+
+Arrange so that x y w are set to 0, reducing the number of states.
+real	1m20,473s
+user	1m20,135s
+sys	0m0,314s
 -}
 
 main :: IO ()
 main = do
-  instrs <- parse <$> readInputDay 24
+  instrs <- optimize . parse <$> readInputDay 24
   mapM_ print instrs
   putStrLn ("Part 1: " ++ show (run [9, 8 .. 1] (eval (Reg 0 0 0 0) instrs)))
   putStrLn ("Part 2: " ++ show (run [1 .. 9] (eval (Reg 0 0 0 0) instrs)))
