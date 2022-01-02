@@ -6,6 +6,21 @@ import Data.Foldable (foldl')
 import qualified Data.PQueue.Prio.Min as PQ
 import qualified Data.Set as Set
 
+-- | [00000011111]
+-- |        ^ returns index of first true value
+{-# INLINE binsearch #-}
+binsearch :: (Int, Int) -> (Int -> Bool) -> Maybe Int
+binsearch (lo, hi) f =
+  let mid = (hi - lo) `div` 2 + lo
+      x = f mid
+   in case x of
+        False
+          | lo /= hi -> binsearch (mid + 1, hi) f
+          | otherwise -> Nothing
+        True
+          | lo == mid -> Just mid
+          | otherwise -> binsearch (lo, mid) f
+
 dfs :: Ord s => s -> (s -> [s]) -> [s]
 dfs initS = dfsWith initS id
 

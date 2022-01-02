@@ -53,7 +53,7 @@ executable day06
 
 executable day07
     main-is:          Day07.hs
-    build-depends:    base ^>=4.15.0.0, aoclib, array
+    build-depends:    base ^>=4.15.0.0, aoclib, array, bytestring, flatparse
     default-language: Haskell2010
     hs-source-dirs:   bins
     ghc-options: -Wall
